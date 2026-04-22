@@ -1,11 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors. This is highly recommended for Vercel
-    // deployments of MVPs to prevent builds from failing over minor UI warnings.
-    ignoreDuringBuilds: true,
-  },
+  // eslint: {
+    // ignoreDuringBuilds: true,  // Removed: Next.js 14+ doesn't support eslint in next.config
   images: {
     // Allow Next.js to render images hosted on Cloudinary and Unsplash
     remotePatterns: [
