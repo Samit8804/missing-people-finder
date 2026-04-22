@@ -1,13 +1,16 @@
-# Render Backend Deploy Fix
+# Render Backend Deploy Fixed ✅
 
-## NPM Conflict Fixed:
-- Changed backend/package.json cloudinary ^2.5.1 → ^1.41.3 (compatible with multer-storage-cloudinary@4)
-- Regenerated package-lock.json
-- [Next: Commit & push done]
+## NPM Conflict Resolved:
+- backend/package.json: cloudinary ^1.41.3 (matches multer-storage-cloudinary v4 peer dep)
+- package-lock.json regenerated, committed/pushed (new commit above)
+- Repo: https://github.com/Samit8804/missing-people-finder
 
-**Now retry Render deploy:**
-1. Render Dashboard → your service → Manual Deploy → Clear build cache & deploy
-2. Build Command: `npm install` (no flag needed now)
+**Retry Render Deploy Now:**
+1. Render.com Dashboard → Backend service → "Manual Deploy" → "Clear build cache & deploy"
+2. Build Command stays `npm install`
+3. Should succeed! Get URL like your-app.onrender.com/api/...
 
-Repo updated: https://github.com/Samit8804/missing-people-finder/commit/[new]
+**Test:** curl [render-url]/api/health or Postman POST /api/auth/register.
+
+Next: Vercel frontend with NEXT_PUBLIC_API_URL=[render-url]/api
 
