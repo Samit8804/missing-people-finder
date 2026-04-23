@@ -25,6 +25,8 @@ const runMatching = async (missingReportId) => {
       ageScore: 0,
       locationScore: 0,
       descriptionScore: 0,
+      faceScore: 0,
+      faceScoreDetails: null
     };
 
     // 1. Gender Match (+30)
@@ -41,14 +43,12 @@ const runMatching = async (missingReportId) => {
       }
     }
 
-    // 3. Location Match (+25) - Basic substring matching
+    // 3. Location Match (+25)
     if (found.locationFound && missing.lastSeenLocation) {
       const locFound = found.locationFound.toLowerCase();
       const locMissing = missing.lastSeenLocation.toLowerCase();
-      
       const missingWords = getKeywords(locMissing);
       const foundWords = getKeywords(locFound);
-      
       const commonWords = missingWords.filter(w => foundWords.includes(w) && w.length > 3);
       if (commonWords.length > 0 || locFound.includes(locMissing) || locMissing.includes(locFound)) {
         score += 25;
@@ -56,12 +56,11 @@ const runMatching = async (missingReportId) => {
       }
     }
 
-    // 4. Description Keywords Match (+20)
+    // 4. Description Match (+20)
     if (found.description && missing.description) {
       const missingDescWords = getKeywords(missing.description);
       const foundDescWords = getKeywords(found.description);
       const common = missingDescWords.filter(w => foundDescWords.includes(w) && w.length > 4);
-      
       if (common.length >= 2) {
         score += 20;
         breakdown.descriptionScore = 20;
@@ -71,12 +70,31 @@ const runMatching = async (missingReportId) => {
       }
     }
 
-    // Threshold is 50
+    // 5. Google Cloud Vision Face Match (+20)
+    if (found.faceFeatures?.bbox && missing.faceFeatures?.bbox) {
+      const mBbox = missing.faceFeatures.bbox;
+      const fBbox = found.faceFeatures.bbox;
+      const xSim = 1 - Math.abs(mBbox.x - fBbox.x);
+      const ySim = 1 - Math.abs(mBbox.y - fBbox.y);
+      const sizeSim = 1 - Math.abs((mBbox.width * mBbox.height) - (fBbox.width * fBbox.height)) / Math.max(mBbox.width * mBbox.height, fBbox.width * fBbox.height);
+      const faceSimilarity = (xSim + ySim + sizeSim) / 3;
+      
+      if (faceSimilarity > 0.7) {
+        score += 20;
+        breakdown.faceScore = 20;
+        breakdown.faceScoreDetails = { similarity: Math.round(faceSimilarity * 100) };
+      } else if (faceSimilarity > 0.5) {
+        score += 10;
+        breakdown.faceScore = 10;
+        breakdown.faceScoreDetails = { similarity: Math.round(faceSimilarity * 100) };
+      }
+    }
+
+    // Threshold 50+
     if (score >= 50) {
-      // Check if match already exists
       const existingMatch = await Match.findOne({
         missingReport: missing._id,
-        foundReport: found._id,
+        foundReport: found._id
       });
 
       if (!existingMatch) {
@@ -84,26 +102,23 @@ const runMatching = async (missingReportId) => {
           missingReport: missing._id,
           foundReport: found._id,
           matchScore: score,
-          scoreBreakdown: breakdown,
+          scoreBreakdown: breakdown
         });
 
-        // Create Notification
         await Notification.create({
           recipient: missing.reportedBy._id,
           type: 'match_suggested',
           title: 'Potential Match Found',
-          message: `A found person report might match your report for ${missing.name}.`,
+          message: `Found report might match ${missing.name} (score: ${score}).`,
           relatedReport: newMatch._id,
-          relatedReportModel: 'Match',
-          isRead: false,
+          isRead: false
         });
 
-        // Send Email
         if (missing.reportedBy.email) {
           await sendEmail({
             to: missing.reportedBy.email,
-            subject: 'FindLink - Potential Match Found',
-            html: matchSuggestedEmail(missing.reportedBy.name, score, missing.name),
+            subject: 'FindLink - AI Match Found',
+            html: matchSuggestedEmail(missing.reportedBy.name, score, missing.name)
           });
         }
 
@@ -116,3 +131,4 @@ const runMatching = async (missingReportId) => {
 };
 
 module.exports = { runMatching };
+

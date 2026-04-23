@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig = {\n  output: 'export',\n  trailingSlash: true,
   // eslint: {
     // ignoreDuringBuilds: true,  // Removed: Next.js 14+ doesn't support eslint in next.config
   images: {

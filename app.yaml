@@ -1,0 +1,1 @@
+runtime: nodejs20\nenv: standard\n\nautomatic_scaling:\n  min_instances: 1\n  max_instances: 10\n\nenv_variables:\n  NODE_ENV: 'production'\n\n# Skip files\nskip_files:\n  - ^backend($|/.*)\n  - ^functions($|/.*)\n  - ^node_modules($|/.*)\n  - ^.git($|/.*)\n

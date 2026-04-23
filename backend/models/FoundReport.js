@@ -57,6 +57,24 @@ const foundReportSchema = new mongoose.Schema(
       },
     },
 
+    // ─── Google Cloud Vision AI Features ──────────────────────────────────
+    faceFeatures: {
+      bbox: {
+        x: { type: Number },
+        y: { type: Number },
+        width: { type: Number },
+        height: { type: Number },
+      },
+      landmarks: {
+        leftEye: { x: Number, y: Number },
+        rightEye: { x: Number, y: Number },
+        nose: { x: Number, y: Number },
+      },
+      confidence: Number,
+      numFaces: Number,
+      analyzedAt: Date,
+    },
+
     // ─── Status ───────────────────────────────────────────────────────────
     status: {
       type: String,
@@ -76,3 +94,4 @@ foundReportSchema.index({ reportedBy: 1 });
 
 const FoundReport = mongoose.model('FoundReport', foundReportSchema);
 module.exports = FoundReport;
+
