@@ -129,11 +129,81 @@ const deleteMissingReport = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: 'Report deleted' });
 });
 
+// ─── @route  POST /api/missing/:id/contact ─────────────────────────────────────
+// @desc    Public user contacts missing report owner (creates match + notification)
+// @access  Private
+const contactMissingReporter = asyncHandler(async (req, res) => {
+  const missingReport = await MissingReport.findById(req.params.id).populate('reportedBy');
+  
+  if (!missingReport) {
+    return res.status(404).json({ success: false, message: 'Missing report not found' });
+  }
+
+  // Prevent self-contact or already matched
+  if (missingReport.reportedBy._id.toString() === req.user._id.toString()) {
+    return res.status(400).json({ success: false, message: 'Cannot contact your own report' });
+  }
+
+  // Check if already matched (any status)
+  const existingMatch = await Match.findOne({
+    missingReport: missingReport._id,
+    foundReport: { $exists: true }
+  });
+
+  if (existingMatch) {
+    return res.status(400).json({ success: false, message: 'Already contacted/matched' });
+  }
+
+  // Create manual match (base score 50, manual type)
+  const newMatch = await Match.create({
+    missingReport: missingReport._id,
+    // Note: foundReport optional for manual/public contacts
+    matchScore: 50, // Manual contact base score
+    scoreBreakdown: {
+      manualContact: 50
+    },
+    status: 'suggested',
+    reviewedBy: req.user._id
+  });
+
+  // Notify missing reporter
+  await Notification.create({
+    recipient: missingReport.reportedBy._id,
+    type: 'public_contact',
+    title: 'Someone Thinks They Found Your Missing Person',
+    message: `${req.user.name || 'A community member'} believes they found ${missingReport.name}. Check potential match.`,
+    relatedReport: newMatch._id,
+    relatedReportModel: 'Match',
+    isRead: false
+  });
+
+  // Email alert
+  if (missingReport.reportedBy.email && missingReport.contactEmail) {
+    await sendEmail({
+      to: missingReport.reportedBy.email,
+      subject: `Potential Lead for ${missingReport.name} - FindLink`,
+      html: `
+        <h2>New Lead for ${missingReport.name}</h2>
+        <p>A community member contacted you through the public board.</p>
+        <p><strong>Login to FindLink</strong> to view details and confirm match.</p>
+        <p>Case ID: ${missingReport.caseId}</p>
+      `
+    });
+  }
+
+  res.status(200).json({ 
+    success: true, 
+    message: 'Contact sent! Reporter notified.', 
+    matchId: newMatch._id 
+  });
+});
+
 module.exports = {
   createMissingReport,
   getAllMissingReports,
   getMyMissingReports,
   getMissingReportById,
   updateMissingReport,
-  deleteMissingReport
+  deleteMissingReport,
+  contactMissingReporter
 };

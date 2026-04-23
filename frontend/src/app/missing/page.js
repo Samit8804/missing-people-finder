@@ -14,8 +14,11 @@ import {
   Loader2,
   ArrowRight,
   Info,
-  Clock
+  Clock,
+  Eye
 } from "lucide-react";
+import ContactModal from "@/components/ContactModal";
+import { useAuth } from "@/lib/authContext";
 import Link from "next/link";
 
 export default function MissingBoardPage() {
@@ -23,6 +26,8 @@ export default function MissingBoardPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [contactModal, setContactModal] = useState({ open: false, reportId: null });
+  const { user } = useAuth();
 
   const fetchReports = async () => {
     setLoading(true);
@@ -165,19 +170,37 @@ export default function MissingBoardPage() {
                     <p className="text-xs text-gray-400 mb-4 line-clamp-2 italic italic text-left">
                       &quot;{report.description}&quot;
                     </p>
-                    <Link 
-                      href={`/report/missing/${report._id}`}
-                      className="flex items-center justify-between text-sm font-bold text-purple-600 group/link"
-                    >
-                      <span>View Full Details</span>
-                      <ArrowRight size={16} className="group-hover/link:translate-x-1 transition-transform" />
-                    </Link>
+                    <div className="flex gap-2 mt-2">
+                      <Link 
+                        href={`/report/missing/${report._id}`}
+                        className="flex-1 text-xs font-medium text-purple-600 hover:text-purple-700 border border-purple-200 bg-purple-50 py-2 px-3 rounded-lg hover:bg-purple-100 transition-all text-center"
+                      >
+                        View Details
+                      </Link>
+                      <button
+                        onClick={() => setContactModal({ open: true, reportId: report._id })}
+                        disabled={!user}
+                        className="flex-1 text-xs font-bold text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed py-2 px-3 rounded-lg shadow-sm hover:shadow-md transition-all text-center"
+                        title={user ? "Contact Reporter" : "Login to contact"}
+                      >
+                        <Eye size={14} className="inline ml-1" />
+                        I Found Them
+                      </button>
+                    </div>
                   </div>
                 </div>
               </motion.div>
             ))}
           </div>
         )}
+
+        {/* Contact Modal */}
+        <ContactModal
+          reportId={contactModal.reportId}
+          isOpen={contactModal.open}
+          onClose={() => setContactModal({ open: false, reportId: null })}
+          isLoggedIn={!!user}
+        />
       </main>
 
       <Footer />

@@ -7,7 +7,7 @@ const { sendEmail, matchSuggestedEmail } = require('../utils/sendEmail');
 // Simple helper to extract alphanumeric words
 const getKeywords = (text) => {
   if (!text) return [];
-  return text.toLowerCase().match(/\\b\\w+\\b/g) || [];
+  return text.toLowerCase().match(/\b\w+\b/g) || [];
 };
 
 const runMatching = async (missingReportId) => {
@@ -74,7 +74,7 @@ const runMatching = async (missingReportId) => {
     }
 
     // 5. NEW: Google Cloud Vision Face Match (+20)
-    if (found.faceFeatures && missing.faceFeatures) {
+    if (found.faceFeatures?.bbox && missing.faceFeatures?.bbox) {
       const mBbox = missing.faceFeatures.bbox;
       const fBbox = found.faceFeatures.bbox;
       
@@ -116,7 +116,7 @@ const runMatching = async (missingReportId) => {
           recipient: missing.reportedBy._id,
           type: 'match_suggested',
           title: 'AI Potential Match Found',
-          message: `Found report matches ${missing.name} (${score}% - AI Face: ${breakdown.faceScore}).`,
+          message: `Found report matches ${missing.name} (Score: ${score}/120 - AI Face: ${breakdown.faceScore}).`,
           relatedReport: newMatch._id,
           relatedReportModel: 'Match',
           isRead: false,
