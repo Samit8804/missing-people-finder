@@ -7,7 +7,7 @@ const { sendEmail, matchSuggestedEmail } = require('../utils/sendEmail');
 // Simple helper to extract alphanumeric words
 const getKeywords = (text) => {
   if (!text) return [];
-  return text.toLowerCase().match(/\b\w+\b/g) || [];
+  return text.toLowerCase().match(/\\b\\w+\\b/g) || [];
 };
 
 const runMatching = async (missingReportId) => {
@@ -43,12 +43,14 @@ const runMatching = async (missingReportId) => {
       }
     }
 
-    // 3. Location Match (+25)
+    // 3. Location Match (+25) - Basic substring matching
     if (found.locationFound && missing.lastSeenLocation) {
       const locFound = found.locationFound.toLowerCase();
       const locMissing = missing.lastSeenLocation.toLowerCase();
+      
       const missingWords = getKeywords(locMissing);
       const foundWords = getKeywords(locFound);
+      
       const commonWords = missingWords.filter(w => foundWords.includes(w) && w.length > 3);
       if (commonWords.length > 0 || locFound.includes(locMissing) || locMissing.includes(locFound)) {
         score += 25;
@@ -56,11 +58,12 @@ const runMatching = async (missingReportId) => {
       }
     }
 
-    // 4. Description Match (+20)
+    // 4. Description Keywords Match (+20)
     if (found.description && missing.description) {
       const missingDescWords = getKeywords(missing.description);
       const foundDescWords = getKeywords(found.description);
       const common = missingDescWords.filter(w => foundDescWords.includes(w) && w.length > 4);
+      
       if (common.length >= 2) {
         score += 20;
         breakdown.descriptionScore = 20;
@@ -70,31 +73,34 @@ const runMatching = async (missingReportId) => {
       }
     }
 
-    // 5. Google Cloud Vision Face Match (+20)
-    if (found.faceFeatures?.bbox && missing.faceFeatures?.bbox) {
+    // 5. NEW: Google Cloud Vision Face Match (+20)
+    if (found.faceFeatures && missing.faceFeatures) {
       const mBbox = missing.faceFeatures.bbox;
       const fBbox = found.faceFeatures.bbox;
+      
       const xSim = 1 - Math.abs(mBbox.x - fBbox.x);
       const ySim = 1 - Math.abs(mBbox.y - fBbox.y);
       const sizeSim = 1 - Math.abs((mBbox.width * mBbox.height) - (fBbox.width * fBbox.height)) / Math.max(mBbox.width * mBbox.height, fBbox.width * fBbox.height);
+      
       const faceSimilarity = (xSim + ySim + sizeSim) / 3;
       
       if (faceSimilarity > 0.7) {
         score += 20;
         breakdown.faceScore = 20;
-        breakdown.faceScoreDetails = { similarity: Math.round(faceSimilarity * 100) };
+        breakdown.faceScoreDetails = { similarity: Math.round(faceSimilarity * 100) + '% match' };
       } else if (faceSimilarity > 0.5) {
         score += 10;
         breakdown.faceScore = 10;
-        breakdown.faceScoreDetails = { similarity: Math.round(faceSimilarity * 100) };
+        breakdown.faceScoreDetails = { similarity: Math.round(faceSimilarity * 100) + '% partial' };
       }
     }
 
-    // Threshold 50+
+    // Threshold is 50
     if (score >= 50) {
+      // Check if match already exists
       const existingMatch = await Match.findOne({
         missingReport: missing._id,
-        foundReport: found._id
+        foundReport: found._id,
       });
 
       if (!existingMatch) {
@@ -102,23 +108,26 @@ const runMatching = async (missingReportId) => {
           missingReport: missing._id,
           foundReport: found._id,
           matchScore: score,
-          scoreBreakdown: breakdown
+          scoreBreakdown: breakdown,
         });
 
+        // Create Notification
         await Notification.create({
           recipient: missing.reportedBy._id,
           type: 'match_suggested',
-          title: 'Potential Match Found',
-          message: `Found report might match ${missing.name} (score: ${score}).`,
+          title: 'AI Potential Match Found',
+          message: `Found report matches ${missing.name} (${score}% - AI Face: ${breakdown.faceScore}).`,
           relatedReport: newMatch._id,
-          isRead: false
+          relatedReportModel: 'Match',
+          isRead: false,
         });
 
+        // Send Email
         if (missing.reportedBy.email) {
           await sendEmail({
             to: missing.reportedBy.email,
             subject: 'FindLink - AI Match Found',
-            html: matchSuggestedEmail(missing.reportedBy.name, score, missing.name)
+            html: matchSuggestedEmail(missing.reportedBy.name, score, missing.name),
           });
         }
 

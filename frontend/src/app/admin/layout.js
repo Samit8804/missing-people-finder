@@ -28,7 +28,7 @@ export default function AdminLayout({ children }) {
   const navItems = [
     { name: "System Overview", href: "/admin", icon: LayoutDashboard },
     { name: "All Reports", href: "/admin/reports", icon: DatabaseZap },
-    { name: "Match Moderation", href: "/admin/matches", icon: SearchHeart },
+{ name: "Match Moderation", href: "/admin/matches", icon: HeartPulse },
     { name: "User Management", href: "/admin/users", icon: Users },
   ];
 
