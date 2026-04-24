@@ -8,7 +8,8 @@ const {
   getMyMissingReports,
   getMissingReportById,
   updateMissingReport,
-  deleteMissingReport
+  deleteMissingReport,
+  contactMissingReporter
 } = require('../controllers/missingController');
 
 // Public routes
