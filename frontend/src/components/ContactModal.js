@@ -14,7 +14,7 @@ export default function ContactModal(props) {
   const handleContact = async () => {
     setLoading(true);
     try {
-      const res = await api.post("/missing/" + reportId + "/contact");
+      await api.post("/missing/" + reportId + "/contact");
       setSuccess(true);
       setTimeout(() => {
         onClose();
@@ -122,8 +122,8 @@ export default function ContactModal(props) {
                 </button>
               )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );
