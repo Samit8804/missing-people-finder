@@ -1,4 +1,7 @@
 const MissingReport = require('../models/MissingReport');
+const Match = require('../models/Match');
+const Notification = require('../models/Notification');
+const { sendEmail } = require('../utils/sendEmail');
 const asyncHandler = require('../utils/asyncHandler');
 
 // ─── @route  POST /api/missing ───────────────────────────────────────────────
@@ -14,7 +17,7 @@ const createMissingReport = asyncHandler(async (req, res) => {
 
   const coordinates = (lat !== undefined && lng !== undefined) ? { lat, lng } : undefined;
 
-  const report = await MissingReport.create({
+  const reportData = {
     reportedBy: req.user._id,
     name,
     age,
@@ -28,7 +31,14 @@ const createMissingReport = asyncHandler(async (req, res) => {
     contactName,
     contactPhone,
     contactEmail
-  });
+  };
+
+  // Add Google Cloud Vision AI face features if detected
+  if (req.faceFeatures) {
+    reportData.faceFeatures = req.faceFeatures;
+  }
+
+  const report = await MissingReport.create(reportData);
 
   res.status(201).json({ success: true, report });
 });
@@ -101,9 +111,16 @@ const updateMissingReport = asyncHandler(async (req, res) => {
   const lng = req.body.lng ? parseFloat(req.body.lng) : undefined;
   const coordinates = (lat !== undefined && lng !== undefined) ? { lat, lng } : report.coordinates;
 
+  const updateData = { ...req.body, photos, coordinates };
+
+  // Re-analyze with Google Cloud Vision if new photos uploaded
+  if (req.files && req.files.length > 0 && req.faceFeatures) {
+    updateData.faceFeatures = req.faceFeatures;
+  }
+
   const updatedReport = await MissingReport.findByIdAndUpdate(
     req.params.id,
-    { ...req.body, photos, coordinates },
+    updateData,
     { new: true, runValidators: true }
   );
 

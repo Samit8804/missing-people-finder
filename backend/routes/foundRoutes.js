@@ -7,6 +7,7 @@ const {
   getAllFoundReports,
   getMyFoundReports,
   getFoundReportById,
+  updateFoundReport,
   deleteFoundReport
 } = require('../controllers/foundController');
 
@@ -17,6 +18,7 @@ router.get('/', getAllFoundReports);
 router.post('/', protect, handleUpload, createFoundReport);
 router.get('/my', protect, getMyFoundReports); // Must be before /:id
 router.get('/:id', getFoundReportById); // Made public (controller handles anonymity)
+router.put('/:id', protect, handleUpload, updateFoundReport);
 router.delete('/:id', protect, deleteFoundReport);
 
 module.exports = router;

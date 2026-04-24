@@ -12,7 +12,7 @@ const createFoundReport = asyncHandler(async (req, res) => {
   const photos = req.files ? req.files.map(file => file.path) : [];
   const coordinates = (lat !== undefined && lng !== undefined) ? { lat, lng } : undefined;
 
-  const report = await FoundReport.create({
+  const reportData = {
     reportedBy: req.user._id,
     isAnonymous: isAnonymous !== undefined ? isAnonymous : false,
     approximateAge,
@@ -22,7 +22,14 @@ const createFoundReport = asyncHandler(async (req, res) => {
     dateFound,
     coordinates,
     photos
-  });
+  };
+
+  // Add Google Cloud Vision AI face features if detected
+  if (req.faceFeatures) {
+    reportData.faceFeatures = req.faceFeatures;
+  }
+
+  const report = await FoundReport.create(reportData);
 
   res.status(201).json({ success: true, report });
 });
@@ -87,6 +94,42 @@ const getFoundReportById = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, report });
 });
 
+// ─── @route  PUT /api/found/:id ──────────────────────────────────────────────
+// @desc    Update own found report
+// @access  Private
+const updateFoundReport = asyncHandler(async (req, res) => {
+  const report = await FoundReport.findById(req.params.id);
+
+  if (!report) {
+    return res.status(404).json({ success: false, message: 'Report not found' });
+  }
+
+  if (report.reportedBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Not authorized to update' });
+  }
+
+  const photos = req.files && req.files.length > 0 ? req.files.map(f => f.path) : report.photos;
+
+  const lat = req.body.lat ? parseFloat(req.body.lat) : undefined;
+  const lng = req.body.lng ? parseFloat(req.body.lng) : undefined;
+  const coordinates = (lat !== undefined && lng !== undefined) ? { lat, lng } : report.coordinates;
+
+  const updateData = { ...req.body, photos, coordinates };
+
+  // Re-analyze with Google Cloud Vision if new photos uploaded
+  if (req.files && req.files.length > 0 && req.faceFeatures) {
+    updateData.faceFeatures = req.faceFeatures;
+  }
+
+  const updatedReport = await FoundReport.findByIdAndUpdate(
+    req.params.id,
+    updateData,
+    { new: true, runValidators: true }
+  );
+
+  res.status(200).json({ success: true, report: updatedReport });
+});
+
 // ─── @route  DELETE /api/found/:id ─────────────────────────────────────────────
 // @desc    Delete own found report
 // @access  Private
@@ -111,5 +154,6 @@ module.exports = {
   getAllFoundReports,
   getMyFoundReports,
   getFoundReportById,
+  updateFoundReport,
   deleteFoundReport
 };
