@@ -6,3 +6,7 @@ frontend/.next/
 frontend/out/
 backend/dist/
 *.log
+functions/  
+firebase.json  
+backend/missing-people-finder-*.json  
+backend/firebase*.json  
