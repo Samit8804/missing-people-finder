@@ -7,6 +7,8 @@ import { useAuth } from "@/lib/authContext";
 
 export default function LoginPage() {
   const { login, googleLogin } = useAuth();
+  const googleClientId = (typeof window !== 'undefined') ? (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '') : '';
+  const googleEnabled = !!googleClientId;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +30,8 @@ export default function LoginPage() {
 
   // Google Sign-In integration
   useEffect(() => {
-    // Credential response handler must be in scope before initialize
+    if (!googleEnabled) return;
+      // Credential response handler must be in scope before initialize
     const handleCredentialResponse = (response) => {
       // response.credential is a JWT id_token
       const idToken = response?.credential;
@@ -73,7 +76,7 @@ export default function LoginPage() {
       }
     }
     // Cleanup not strictly necessary here
-  }, []);
+  }, [googleEnabled]);
 
   return (
     <div className="card w-full shadow-xl">
@@ -143,9 +146,13 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <div className="mt-4 flex items-center justify-center">
-        <div id="googleSignInDiv"></div>
-      </div>
+  {googleEnabled ? (
+        <div className="mt-4 flex items-center justify-center">
+          <div id="googleSignInDiv"></div>
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500 text-center mb-4">Google Sign-In is not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID.</p>
+      )}
 
       <div className="mt-8 text-center text-sm text-gray-600">
         Don&apos;t have an account?{" "}

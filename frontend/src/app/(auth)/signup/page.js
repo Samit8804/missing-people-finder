@@ -12,6 +12,8 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [step, setStep] = useState(1); // 1 = form, 2 = OTP
   const [otp, setOtp] = useState("");
+  const googleClientId = (typeof window !== 'undefined') ? (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '') : '';
+  const googleEnabled = !!googleClientId;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -89,6 +91,7 @@ export default function SignupPage() {
 
   // Google Sign-In integration for signup
   useEffect(() => {
+    if (!googleEnabled) return;
     const handleCredentialResponse = (response) => {
       const idToken = response?.credential;
       if (idToken) {
@@ -103,7 +106,7 @@ export default function SignupPage() {
       script.onload = () => {
         try {
           window.google.accounts.id.initialize({
-            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
+            client_id: googleClientId || '',
             callback: handleCredentialResponse,
           });
           const div = document.getElementById('googleSignInDiv');
@@ -118,14 +121,14 @@ export default function SignupPage() {
       loadGId();
     } else if (typeof window !== 'undefined' && window.google) {
       try {
-        window.google.accounts.id.initialize({ client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '', callback: handleCredentialResponse });
+        window.google.accounts.id.initialize({ client_id: googleClientId || '', callback: handleCredentialResponse });
         const div = document.getElementById('googleSignInDiv');
         if (div) window.google.accounts.id.renderButton(div, { theme: 'outline', size: 'large' });
       } catch (e) {
         console.error(e);
       }
     }
-  }, []);
+  }, [googleEnabled]);
 
   return (
     <div className="card w-full shadow-xl">
@@ -229,9 +232,13 @@ export default function SignupPage() {
         </button>
       </form>
 
-      <div className="mt-4 flex items-center justify-center">
-        <div id="googleSignInDiv"></div>
-      </div>
+      {googleEnabled ? (
+        <div className="mt-4 flex items-center justify-center">
+          <div id="googleSignInDiv"></div>
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500 text-center mb-4">Google Sign-In is not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID.</p>
+      )}
 
       <div className="mt-8 text-center text-sm text-gray-600">
         Already have an account?{" "}
