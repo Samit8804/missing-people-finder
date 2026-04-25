@@ -26,13 +26,14 @@ connectDB();
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(helmet());                              // Security headers
+// CORS: allow any origin (reflect the request origin) and allow credentials
+// This helps ensure preflight requests (OPTIONS) include Access-Control headers
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allows any origin to facilitate seamless Vercel production/preview deployments
-    return callback(null, true); 
-  },
+  origin: true,
   credentials: true,
 }));
+// Ensure OPTIONS preflight requests are handled and return proper CORS headers
+app.options('*', cors());
 app.use(express.json());                        // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(morgan('dev'));                          // Request logging
