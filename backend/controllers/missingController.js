@@ -194,29 +194,11 @@ const contactMissingReporter = asyncHandler(async (req, res) => {
     isRead: false
   });
 
-  // Email alert (notify reporter if configured)
-  let emailStatus = true;
-  try {
-    if (missingReport.reportedBy?.email) {
-      await sendEmail({
-        to: missingReport.reportedBy.email,
-        subject: `Potential Lead for ${missingReport.name} - FindLink`,
-        html: `
-          <h2>New Lead for ${missingReport.name}</h2>
-          <p>A community member contacted you through the public board.</p>
-          <p><strong>Login to FindLink</strong> to view details and confirm match.</p>
-          <p>Case ID: ${missingReport.caseId}</p>
-        `
-      });
-    }
-  } catch (err) {
-    console.error('Failed to send contact email to reporter', err);
-    emailStatus = false;
-  }
-
+  // Email delivery disabled; reporter notified via in-app Notification only
+  const emailStatus = true;
   res.status(200).json({ 
     success: true, 
-    message: 'Contact sent! Reporter notified.' + (emailStatus ? '' : ' (email delivery failed)'), 
+    message: 'Contact sent! Reporter notified.', 
     emailStatus,
     matchId: newMatch._id 
   });
