@@ -27,6 +27,9 @@ connectDB();
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(helmet());                              // Security headers
 
+// Debug flag for CORS diagnostics
+const CORS_DEBUG = (process.env.CORS_DEBUG === '1' || process.env.CORS_DEBUG === 'true');
+
 // CORS: allow origins based on CORS_WHITELIST env var (comma-separated).
 // If whitelist is empty, allow all origins (production can set explicit list).
 const CORS_WHITELIST = (process.env.CORS_WHITELIST || '')
@@ -37,6 +40,10 @@ const CORS_WHITELIST = (process.env.CORS_WHITELIST || '')
 app.use(
   cors({
     origin: function (origin, callback) {
+      if (CORS_DEBUG) {
+        console.log('[CORS] request origin:', origin);
+        console.log('[CORS] whitelist:', CORS_WHITELIST);
+      }
       // If no origin (non-browser request), allow
       if (!origin) return callback(null, true);
       // If no whitelist configured, allow all origins
@@ -44,6 +51,7 @@ app.use(
       // Allow if origin is in the whitelist
       if (CORS_WHITELIST.includes(origin)) return callback(null, true);
       // Deny otherwise
+      if (CORS_DEBUG) console.log('[CORS] origin blocked by whitelist');
       return callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
