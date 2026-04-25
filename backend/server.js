@@ -26,12 +26,37 @@ connectDB();
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(helmet());                              // Security headers
-// CORS: allow any origin (reflect the request origin) and allow credentials
-// This helps ensure preflight requests (OPTIONS) include Access-Control headers
-app.use(cors({
-  origin: true,
-  credentials: true,
-}));
+
+// CORS: allow origins based on CORS_WHITELIST env var (comma-separated).
+// If whitelist is empty, allow all origins (production can set explicit list).
+const CORS_WHITELIST = (process.env.CORS_WHITELIST || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // If no origin (non-browser request), allow
+      if (!origin) return callback(null, true);
+      // If no whitelist configured, allow all origins
+      if (CORS_WHITELIST.length === 0) return callback(null, true);
+      // Allow if origin is in the whitelist
+      if (CORS_WHITELIST.includes(origin)) return callback(null, true);
+      // Deny otherwise
+      return callback(new Error('Not allowed by CORS'), false);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Origin',
+      'Accept',
+      'X-Requested-With',
+    ],
+  })
+);
 // Ensure OPTIONS preflight requests are handled and return proper CORS headers
 app.options('*', cors());
 app.use(express.json());                        // Parse JSON bodies
