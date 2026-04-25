@@ -44,18 +44,34 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (userData) => {
     const res = await api.post('/auth/signup', userData);
+    // Do not log in yet; OTP verification is required before login
+    return res.data;
+  };
+
+  const verifyOTP = async (otp, email) => {
+    // Include email for signup OTP flow if not authenticated
+    const payload = email ? { otp, email } : { otp };
+    const res = await api.post('/auth/verify-otp', payload);
     if (res.data.success) {
-      localStorage.setItem('token', res.data.token);
-      setUser(res.data.user);
-      // Wait for OTP verify
+      // If token is returned (signup flow), store it and set user
+      if (res.data.token) {
+        localStorage.setItem('token', res.data.token);
+        setUser(res.data.user);
+        router.push('/dashboard');
+        return res.data;
+      }
+      // Otherwise just mark verified in client state and navigate
+      setUser({ ...user, isVerified: true });
+      router.push('/dashboard');
     }
     return res.data;
   };
 
-  const verifyOTP = async (otp) => {
-    const res = await api.post('/auth/verify-otp', { otp });
+  const googleLogin = async (idToken) => {
+    const res = await api.post('/auth/google-login', { token: idToken });
     if (res.data.success) {
-      setUser({ ...user, isVerified: true });
+      localStorage.setItem('token', res.data.token);
+      setUser(res.data.user);
       router.push('/dashboard');
     }
     return res.data;
@@ -68,7 +84,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, verifyOTP, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, verifyOTP, googleLogin, logout }}>
       {children}
     </AuthContext.Provider>
   );

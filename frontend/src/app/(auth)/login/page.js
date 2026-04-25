@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Loader2, Mail, Lock } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,6 +25,55 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Google Sign-In integration
+  useEffect(() => {
+    // Credential response handler must be in scope before initialize
+    const handleCredentialResponse = (response) => {
+      // response.credential is a JWT id_token
+      const idToken = response?.credential;
+      if (idToken) {
+        // Use auth context to login with Google
+        googleLogin(idToken).then(() => {}).catch(() => {});
+      }
+    };
+    const loadGId = () => {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.onload = () => {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
+            callback: handleCredentialResponse,
+          });
+          const div = document.getElementById('googleSignInDiv');
+          if (div) {
+            window.google.accounts.id.renderButton(div, { theme: 'outline', size: 'large' });
+          }
+        } catch (e) {
+          console.error('Google Sign-In initialization failed', e);
+        }
+      };
+      document.body.appendChild(script);
+    };
+    if (typeof window !== 'undefined' && !window.google) {
+      loadGId();
+    } else if (typeof window !== 'undefined' && window.google) {
+      // Google lib already loaded; render button
+      try {
+        window.google.accounts.id.initialize({
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
+          callback: handleCredentialResponse,
+        });
+        const div = document.getElementById('googleSignInDiv');
+        if (div) window.google.accounts.id.renderButton(div, { theme: 'outline', size: 'large' });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    // Cleanup not strictly necessary here
+  }, []);
 
   return (
     <div className="card w-full shadow-xl">
@@ -93,6 +142,10 @@ export default function LoginPage() {
           )}
         </button>
       </form>
+
+      <div className="mt-4 flex items-center justify-center">
+        <div id="googleSignInDiv"></div>
+      </div>
 
       <div className="mt-8 text-center text-sm text-gray-600">
         Don&apos;t have an account?{" "}

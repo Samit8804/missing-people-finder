@@ -7,6 +7,7 @@ const {
   resendOTP,
   forgotPassword,
   resetPassword,
+  googleLogin,
   getMe,
   updateProfile,
 } = require('../controllers/authController');
@@ -20,8 +21,11 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 
 // ─── Protected Routes (require JWT) ────────────────────────────────────────────
-router.post('/verify-otp', protect, verifyOTP);
-router.post('/resend-otp', protect, resendOTP);
+// OTP verification can be performed both when authenticated (existing flow) and when signing up (unauthenticated)
+router.post('/verify-otp', verifyOTP);
+router.post('/resend-otp', resendOTP);
+// Google login / signup
+router.post('/google-login', googleLogin);
 router.get('/me', protect, getMe);
 router.put('/update-profile', protect, upload.single('avatar'), updateProfile);
 

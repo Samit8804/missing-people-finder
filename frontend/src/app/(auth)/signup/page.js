@@ -38,7 +38,7 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      await verifyOTP(otp);
+      await verifyOTP(otp, formData.email);
       // Auth context will redirect to dashboard
     } catch (err) {
       setError(err.response?.data?.message || "Invalid OTP.");

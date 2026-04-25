@@ -18,7 +18,8 @@ const signup = asyncHandler(async (req, res) => {
 
   const existingUser = await User.findOne({ email: email.toLowerCase() });
   if (existingUser) {
-    return res.status(409).json({ success: false, message: 'An account with this email already exists' });
+    // Inform the user clearly that the email is already registered
+    return res.status(409).json({ success: false, message: 'This email is already registered' });
   }
 
   const user = await User.create({
@@ -52,11 +53,10 @@ const signup = asyncHandler(async (req, res) => {
     `,
   });
 
-  const token = generateToken(user._id, user.role);
+  // Do not log in the user yet. OTP verification is required before login.
   res.status(201).json({
     success: true,
-    message: 'Account created! Please check your email for the verification code.',
-    token,
+    message: 'Account created! Please verify the OTP sent to your email to activate the account.',
     user: {
       id: user._id,
       name: user.name,
@@ -90,6 +90,7 @@ const login = asyncHandler(async (req, res) => {
   if (!isMatch) {
     return res.status(401).json({ success: false, message: 'Invalid email or password' });
   }
+  // OTP verification is optional for login; allow password-based login for existing accounts
 
   const token = generateToken(user._id, user.role);
   res.status(200).json({
@@ -109,12 +110,32 @@ const login = asyncHandler(async (req, res) => {
 });
 
 // ─── @route  POST /api/auth/verify-otp ───────────────────────────────────────
-// @access  Private
+// @access  Public (supports signup OTP flow without authentication) or Private (existing flow)
 const verifyOTP = asyncHandler(async (req, res) => {
-  const { otp } = req.body;
-  if (!otp) return res.status(400).json({ success: false, message: 'OTP is required' });
+  const { otp, email } = req.body;
 
-  const user = await User.findById(req.user._id).select('+otp +otpExpiry');
+  // If an authenticated user is verifying OTP (typical login flow with OTP), keep existing logic
+  if (req.user && req.user._id) {
+    const user = await User.findById(req.user._id).select('+otp +otpExpiry');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.isVerified) return res.status(400).json({ success: false, message: 'Email already verified' });
+    if (!otp) return res.status(400).json({ success: false, message: 'OTP is required' });
+    if (user.otp !== otp) return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    if (user.otpExpiry < new Date()) return res.status(400).json({ success: false, message: 'OTP expired. Request a new one.' });
+
+    user.isVerified = true;
+    user.otp = undefined;
+    user.otpExpiry = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    res.status(200).json({ success: true, message: 'Email verified successfully!' });
+    return;
+  }
+
+  // Signup OTP flow (no authentication yet)
+  if (!otp || !email) return res.status(400).json({ success: false, message: 'OTP and email are required' });
+
+  const user = await User.findOne({ email: email.toLowerCase() }).select('+otp +otpExpiry');
   if (!user) return res.status(404).json({ success: false, message: 'User not found' });
   if (user.isVerified) return res.status(400).json({ success: false, message: 'Email already verified' });
   if (user.otp !== otp) return res.status(400).json({ success: false, message: 'Invalid OTP' });
@@ -125,13 +146,36 @@ const verifyOTP = asyncHandler(async (req, res) => {
   user.otpExpiry = undefined;
   await user.save({ validateBeforeSave: false });
 
-  res.status(200).json({ success: true, message: 'Email verified successfully!' });
+  // Issue a JWT token so frontend can immediately log in after OTP verification
+  const token = generateToken(user._id, user.role);
+  res.status(200).json({
+    success: true,
+    message: 'OTP verified. You are now logged in.',
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      isVerified: user.isVerified,
+      avatar: user.avatar,
+    },
+  });
 });
 
 // ─── @route  POST /api/auth/resend-otp ───────────────────────────────────────
-// @access  Private
+// @access  Public or Private (supports signup flow without auth)
 const resendOTP = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id).select('+otp +otpExpiry');
+  const { email } = req.body;
+
+  let user;
+  if (req.user && req.user._id) {
+    user = await User.findById(req.user._id).select('+otp +otpExpiry');
+  } else if (email) {
+    user = await User.findOne({ email: email.toLowerCase() }).select('+otp +otpExpiry');
+  }
+
   if (!user) return res.status(404).json({ success: false, message: 'User not found' });
   if (user.isVerified) return res.status(400).json({ success: false, message: 'Already verified' });
 
@@ -140,11 +184,63 @@ const resendOTP = asyncHandler(async (req, res) => {
 
   await sendEmail({
     to: user.email,
-    subject: 'Your new FindLink verification code',
-    html: `<p>Your new OTP: <strong style="font-size:24px;color:#7C3AED;">${otp}</strong></p><p>Expires in 10 minutes.</p>`,
+    subject: 'Your FindLink verification code',
+    html: `<p>Your OTP: <strong style="font-size:24px;color:#7C3AED;">${otp}</strong></p><p>Expires in 10 minutes.</p>`,
   });
 
-  res.status(200).json({ success: true, message: 'New OTP sent to your email.' });
+  res.status(200).json({ success: true, message: 'OTP sent to your email.' });
+});
+
+// ─── @route  POST /api/auth/google-login ───────────────────────────────────
+// @access  Public
+const googleLogin = asyncHandler(async (req, res) => {
+  const { token } = req.body; // ID token from Google
+  if (!token) return res.status(400).json({ success: false, message: 'Google token is required' });
+
+  // Lazy import to avoid heavier dependencies when not used
+  const { OAuth2Client } = require('google-auth-library');
+  const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+  if (!CLIENT_ID) {
+    return res.status(500).json({ success: false, message: 'Google client not configured' });
+  }
+  const client = new OAuth2Client(CLIENT_ID);
+  let payload;
+  try {
+    const ticket = await client.verifyIdToken({ idToken: token, audience: CLIENT_ID });
+    payload = ticket.getPayload();
+  } catch (err) {
+    return res.status(400).json({ success: false, message: 'Invalid Google token' });
+  }
+
+  const email = (payload && payload.email) ? payload.email.toLowerCase() : null;
+  const name = payload.name || 'Google User';
+  if (!email) {
+    return res.status(400).json({ success: false, message: 'Could not identify email from Google token' });
+  }
+
+  let user = await User.findOne({ email }).select('+otp +otpExpiry');
+  if (!user) {
+    // Create new user with a random password (required by schema)
+    const randomPass = require('crypto').randomBytes(16).toString('hex');
+    user = await User.create({ name, email, passwordHash: randomPass, isVerified: true });
+  }
+
+  // Generate JWT for the user
+  const jwt = generateToken(user._id, user.role);
+  res.status(200).json({
+    success: true,
+    message: 'Google login successful',
+    token: jwt,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      isVerified: user.isVerified,
+      avatar: user.avatar,
+    },
+  });
 });
 
 // ─── @route  POST /api/auth/forgot-password ──────────────────────────────────
@@ -232,4 +328,4 @@ const updateProfile = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { signup, login, verifyOTP, resendOTP, forgotPassword, resetPassword, getMe, updateProfile };
+module.exports = { signup, login, verifyOTP, resendOTP, forgotPassword, resetPassword, googleLogin, getMe, updateProfile };
