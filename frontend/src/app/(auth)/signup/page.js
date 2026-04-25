@@ -6,7 +6,7 @@ import { ArrowRight, Loader2, Mail, Lock, User, Phone } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 
 export default function SignupPage() {
-  const { signup, verifyOTP } = useAuth();
+  const { signup, verifyOTP, googleLogin } = useAuth();
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -86,6 +86,46 @@ export default function SignupPage() {
       </div>
     );
   }
+
+  // Google Sign-In integration for signup
+  useEffect(() => {
+    const handleCredentialResponse = (response) => {
+      const idToken = response?.credential;
+      if (idToken) {
+        // Sign up/login with Google using the same backend flow
+        googleLogin(idToken).then(() => {}).catch(() => {});
+      }
+    };
+    const loadGId = () => {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.onload = () => {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
+            callback: handleCredentialResponse,
+          });
+          const div = document.getElementById('googleSignInDiv');
+          if (div) window.google.accounts.id.renderButton(div, { theme: 'outline', size: 'large' });
+        } catch (e) {
+          console.error('Google Sign-In initialization failed', e);
+        }
+      };
+      document.body.appendChild(script);
+    };
+    if (typeof window !== 'undefined' && !window.google) {
+      loadGId();
+    } else if (typeof window !== 'undefined' && window.google) {
+      try {
+        window.google.accounts.id.initialize({ client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '', callback: handleCredentialResponse });
+        const div = document.getElementById('googleSignInDiv');
+        if (div) window.google.accounts.id.renderButton(div, { theme: 'outline', size: 'large' });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
 
   return (
     <div className="card w-full shadow-xl">
@@ -188,6 +228,10 @@ export default function SignupPage() {
           )}
         </button>
       </form>
+
+      <div className="mt-4 flex items-center justify-center">
+        <div id="googleSignInDiv"></div>
+      </div>
 
       <div className="mt-8 text-center text-sm text-gray-600">
         Already have an account?{" "}
