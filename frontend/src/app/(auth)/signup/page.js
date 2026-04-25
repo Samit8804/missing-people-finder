@@ -111,6 +111,9 @@ export default function SignupPage() {
           });
           const div = document.getElementById('googleSignInDiv');
           if (div) window.google.accounts.id.renderButton(div, { theme: 'outline', size: 'large' });
+          if (window?.google?.accounts?.id?.prompt) {
+            window.google.accounts.id.prompt({ prompt: 'select_account' });
+          }
         } catch (e) {
           console.error('Google Sign-In initialization failed', e);
         }
@@ -124,6 +127,9 @@ export default function SignupPage() {
         window.google.accounts.id.initialize({ client_id: googleClientId || '', callback: handleCredentialResponse });
         const div = document.getElementById('googleSignInDiv');
         if (div) window.google.accounts.id.renderButton(div, { theme: 'outline', size: 'large' });
+        if (window?.google?.accounts?.id?.prompt) {
+          window.google.accounts.id.prompt({ prompt: 'select_account' });
+        }
       } catch (e) {
         console.error(e);
       }

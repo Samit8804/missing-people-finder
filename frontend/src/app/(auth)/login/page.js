@@ -54,6 +54,9 @@ export default function LoginPage() {
           if (div) {
             window.google.accounts.id.renderButton(div, { theme: 'outline', size: 'large' });
           }
+          if (window?.google?.accounts?.id?.prompt) {
+            window.google.accounts.id.prompt({ prompt: 'select_account' });
+          }
         } catch (e) {
           console.error('Google Sign-In initialization failed', e);
         }
