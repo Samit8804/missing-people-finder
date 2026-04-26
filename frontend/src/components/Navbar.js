@@ -43,6 +43,9 @@ export default function Navbar() {
 
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8 whitespace-nowrap">
+          <Link href="/dashboard" className="text-gray-600 hover:text-purple-600 font-medium transition-colors">
+            Dashboard
+          </Link>
           <Link href="/#how-it-works" className="text-gray-600 hover:text-purple-600 font-medium transition-colors">
             How it Works
           </Link>

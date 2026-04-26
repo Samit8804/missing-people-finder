@@ -146,7 +146,7 @@ export default function ReportFoundPage() {
       <Navbar />
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6">
         <Link href="/dashboard" className="inline-flex items-center gap-2 text-purple-600 hover:underline">
-          <ChevronLeft size={16} /> Back to Dashboard
+          <ChevronLeft size={16} /> Dashboard
         </Link>
       </div>
       
