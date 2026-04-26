@@ -40,7 +40,7 @@ export default function DashboardClient() {
           <p className="text-gray-500 mt-1">Manage your active cases and review new matches.</p>
         </div>
         <div className="flex gap-3">
-          <Link href="/report/missing" className="btn-primary py-2.5 text-sm flex items-center gap-2">
+          <Link href="/report/new" className="btn-primary py-2.5 text-sm flex items-center gap-2">
             <Plus size={18} /> New Report
           </Link>
         </div>
@@ -136,4 +136,3 @@ export default function DashboardClient() {
     </div>
   );
 }
-
