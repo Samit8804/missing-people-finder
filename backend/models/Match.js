@@ -58,9 +58,14 @@ const matchSchema = new mongoose.Schema(
 );
 
 // ─── Compound unique index: one match entry per missing+found pair ─────────────
+// Note: manual contacts have no foundReport, so we skip uniqueness on null foundReport
 matchSchema.index(
-  { missingReport: 1, foundReport: 1 }, 
-  { unique: true, partialFilterExpression: { foundReport: { $exists: true } } }
+  { missingReport: 1, foundReport: 1 },
+  {
+    unique: true,
+    // Only enforce uniqueness when foundReport is actually set
+    partialFilterExpression: { foundReport: { $type: 'objectId' } },
+  }
 );
 matchSchema.index({ status: 1, matchScore: -1 }); // For fetching top matches
 
