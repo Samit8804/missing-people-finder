@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, X, Search } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from '@/lib/authContext';
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, loading, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,14 +50,23 @@ export default function Navbar() {
             Public Board
           </Link>
           
-          <div className="flex items-center gap-4 border-l border-gray-200 pl-8">
-            <Link href="/login" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-              Log in
-            </Link>
-            <Link href="/signup" className="btn-primary py-2.5 px-6">
-              Get Started
-            </Link>
-          </div>
+          {loading ? (
+            <span className="text-gray-600">Loading...</span>
+          ) : user ? (
+            <div className="flex items-center gap-4 border-l border-gray-200 pl-4">
+              <span className="text-gray-700">{user.name}</span>
+              <button onClick={logout} className="text-gray-600 font-medium">Logout</button>
+            </div>
+          ) : (
+            <>
+              <Link href="/login" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+                Log in
+              </Link>
+              <Link href="/signup" className="btn-primary py-2.5 px-6">
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile menu button */}
