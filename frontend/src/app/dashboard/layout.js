@@ -23,8 +23,9 @@ export default function DashboardLayout({ children }) {
   useEffect(() => {
     if (loading || !user) return;
     const path = pathname || '';
-    // Only redirect away if path starts with /dashboard (keep /missing and /report accessible)
-    if (!path.startsWith('/dashboard')) {
+    // Only redirect away if path is outside the dashboard area (keep /missing, /report, /login accessible)
+    const isAllowed = path.startsWith('/dashboard') || path.startsWith('/missing') || path.startsWith('/report') || path.startsWith('/login');
+    if (!isAllowed) {
       router.push('/dashboard');
     }
   }, [pathname, user, loading, router]);
