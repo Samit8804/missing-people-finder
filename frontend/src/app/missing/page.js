@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import api from "@/lib/api";
 import Navbar from "@/components/Navbar";
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/authContext';
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
 import { 
@@ -18,16 +20,18 @@ import {
   Eye
 } from "lucide-react";
 import ContactModal from "@/components/ContactModal";
-import { useAuth } from "@/lib/authContext";
+// (auth imported above)
 import Link from "next/link";
 
 export default function MissingBoardPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [contactModal, setContactModal] = useState({ open: false, reportId: null });
-  const { user } = useAuth();
+  // single source of truth for user state from AuthContext
 
   const fetchReports = async () => {
     setLoading(true);
@@ -47,6 +51,13 @@ export default function MissingBoardPage() {
     }, 500); // Debounce search
     return () => clearTimeout(timeoutId);
   }, [search, status]);
+
+  // Redirect unauthenticated users to login before showing public board
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login?redirect=/missing');
+    }
+  }, [authLoading, user, router]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">

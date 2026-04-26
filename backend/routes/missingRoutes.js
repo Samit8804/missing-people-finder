@@ -13,7 +13,7 @@ const {
 } = require('../controllers/missingController');
 
 // Public routes
-router.get('/', getAllMissingReports);
+router.get('/', protect, getAllMissingReports);
 
 // Protected routes
 router.post('/', protect, handleUpload, createMissingReport);
