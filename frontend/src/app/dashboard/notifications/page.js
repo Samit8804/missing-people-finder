@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from 'next/link';
+import { ChevronLeft } from 'lucide-react';
 import api from "@/lib/api";
 import { 
   Bell, 
@@ -69,6 +71,11 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="mb-4">
+        <Link href="/dashboard" className="inline-flex items-center gap-2 text-purple-600 hover:underline">
+          <ChevronLeft size={14} /> Back to Dashboard
+        </Link>
+      </div>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-purple-100 text-purple-600 rounded-2xl">

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/authContext";
 import api from "@/lib/api";
 import Navbar from "@/components/Navbar";
+import { ChevronLeft } from 'lucide-react';
+import Link from 'next/link';
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
 import { 
@@ -155,6 +157,11 @@ export default function ReportMissingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6">
+        <Link href="/dashboard" className="inline-flex items-center gap-2 text-purple-600 hover:underline">
+          <ChevronLeft size={16} /> Back to Dashboard
+        </Link>
+      </div>
       
       <main className="flex-grow pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
