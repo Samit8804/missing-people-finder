@@ -31,6 +31,7 @@ export default function MissingBoardPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [contactModal, setContactModal] = useState({ open: false, reportId: null });
+  const [error, setError] = useState("");
   // single source of truth for user state from AuthContext
 
   const fetchReports = async () => {
@@ -110,6 +111,11 @@ export default function MissingBoardPage() {
       </section>
 
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-lg">
+            <p className="font-medium">{error}</p>
+          </div>
+        )}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="animate-spin text-purple-600" size={40} />
@@ -127,9 +133,9 @@ export default function MissingBoardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {reports.map((report, index) => (
+            {reports?.filter(r => r?._id)?.map((report, index) => (
               <motion.div
-                key={report._id}
+                key={report._id?.toString() ?? `report-${index}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
@@ -185,11 +191,11 @@ export default function MissingBoardPage() {
 
                   <div className="mt-auto pt-4 border-t border-gray-50">
                     <p className="text-xs text-gray-400 mb-4 line-clamp-2 italic italic text-left">
-                      &quot;{report.description}&quot;
+                      &quot;{report?.description ?? ''}&quot;
                     </p>
               <div className="flex gap-2 mt-2">
                 <Link 
-                  href={`/report/missing/${report._id}`}
+                  href={`/report/missing/${report?._id ?? ''}`}
                   className="flex-1 text-xs font-medium text-purple-600 hover:text-purple-700 border border-purple-200 bg-purple-50 py-2 px-3 rounded-lg hover:bg-purple-100 transition-all text-center"
                 >
                   View Details
@@ -200,7 +206,7 @@ export default function MissingBoardPage() {
                     : (report.userId ? report.userId.toString() === user._id.toString() : false);
                   return !isOwner ? (
                     <button
-                      onClick={() => setContactModal({ open: true, reportId: report._id })}
+                      onClick={() => setContactModal({ open: true, reportId: report?._id ?? null })}
                       className="flex-1 text-xs font-bold text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed py-2 px-3 rounded-lg shadow-sm hover:shadow-md transition-all text-center"
                       title={"Contact Reporter"}
                     >
