@@ -1,5 +1,11 @@
 {
   "dependencies": {
     "@google-cloud/vision": "^5.3.5"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  },
+  "scripts": {
+    "test": "jest"
   }
 }

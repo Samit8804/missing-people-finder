@@ -58,7 +58,10 @@ const matchSchema = new mongoose.Schema(
 );
 
 // ─── Compound unique index: one match entry per missing+found pair ─────────────
-matchSchema.index({ missingReport: 1, foundReport: 1 }, { unique: true });
+matchSchema.index(
+  { missingReport: 1, foundReport: 1 }, 
+  { unique: true, partialFilterExpression: { foundReport: { $exists: true } } }
+);
 matchSchema.index({ status: 1, matchScore: -1 }); // For fetching top matches
 
 const Match = mongoose.model('Match', matchSchema);

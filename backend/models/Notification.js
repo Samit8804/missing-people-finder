@@ -19,6 +19,7 @@ const notificationSchema = new mongoose.Schema(
         'report_update',      // Someone updated a report you care about
         'status_change',      // Report status changed (active → found)
         'admin_message',      // Message from admin
+        'public_contact',     // A public user contacted the reporter
       ],
       required: true,
     },
