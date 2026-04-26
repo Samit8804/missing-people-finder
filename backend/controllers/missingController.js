@@ -1,7 +1,7 @@
 const MissingReport = require('../models/MissingReport');
 const Match = require('../models/Match');
 const Notification = require('../models/Notification');
-const { sendEmail } = require('../utils/sendEmail');
+const { sendEmail, matchSuggestedEmail } = require('../utils/sendEmail');
 const asyncHandler = require('../utils/asyncHandler');
 
 // ─── @route  POST /api/missing ───────────────────────────────────────────────
@@ -161,23 +161,27 @@ const contactMissingReporter = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'Cannot contact your own report' });
   }
 
-  // Check if already matched (any status)
+  // Check if this specific user already contacted this report
   const existingMatch = await Match.findOne({
     missingReport: missingReport._id,
-    foundReport: { $exists: true }
+    reviewedBy: req.user._id,
+    foundReport: { $exists: false }
   });
 
   if (existingMatch) {
-    return res.status(400).json({ success: false, message: 'Already contacted/matched' });
+    return res.status(400).json({ success: false, message: 'You have already contacted the reporter for this case.' });
   }
 
   // Create manual match (base score 50, manual type)
   const newMatch = await Match.create({
     missingReport: missingReport._id,
-    // Note: foundReport optional for manual/public contacts
-    matchScore: 50, // Manual contact base score
+    // foundReport intentionally omitted — this is a manual public contact
+    matchScore: 50,
     scoreBreakdown: {
-      manualContact: 50
+      genderScore: 0,
+      ageScore: 0,
+      locationScore: 0,
+      descriptionScore: 50 // Represents the manual contact score
     },
     status: 'suggested',
     reviewedBy: req.user._id
@@ -194,8 +198,19 @@ const contactMissingReporter = asyncHandler(async (req, res) => {
     isRead: false
   });
 
-  // Email delivery disabled; reporter notified via in-app Notification only
-  const emailStatus = true;
+  // Try sending an email to the reporter as well
+  let emailStatus = false;
+  try {
+    const reporterEmail = missingReport.reportedBy.email;
+    if (reporterEmail) {
+      const html = matchSuggestedEmail(req.user.name || 'Community Member', newMatch.matchScore, missingReport.name);
+      await sendEmail({ to: reporterEmail, subject: 'Potential Finding for Your Missing Person', html });
+      emailStatus = true;
+    }
+  } catch (emailErr) {
+    console.error('Failed to send reporter email on public contact:', emailErr.message);
+  }
+
   res.status(200).json({ 
     success: true, 
     message: 'Contact sent! Reporter notified.', 

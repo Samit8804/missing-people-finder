@@ -5,13 +5,13 @@ const matchSchema = new mongoose.Schema(
     // ─── Linked Reports ────────────────────────────────────────────────────
     missingReport: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'MissingReport',
+      ref: 'MissingReport', 
       required: true,
     },
     foundReport: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'FoundReport',
-      required: true,
+      required: false, // Optional — manual/public contacts don't always link a FoundReport
     },
 
     // ─── Match Score (0–100) ───────────────────────────────────────────────

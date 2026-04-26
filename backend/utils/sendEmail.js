@@ -27,7 +27,8 @@ const sendEmail = async ({ to, subject, html }) => {
     return info;
   } catch (error) {
     console.error(`❌ Email failed to ${to}:`, error.message);
-    // Don't throw — email failure shouldn't break the API response
+    // Propagate error to caller so the API can inform the client
+    throw error;
   }
 };
 

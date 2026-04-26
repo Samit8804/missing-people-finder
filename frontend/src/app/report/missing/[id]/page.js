@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ContactModal from "@/components/ContactModal";
+import { useAuth } from "@/lib/authContext";
 import { motion } from "framer-motion";
 import { 
   MapPin, 
@@ -24,9 +26,11 @@ import Link from "next/link";
 export default function MissingDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sightingModal, setSightingModal] = useState(false);
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -195,11 +199,18 @@ export default function MissingDetailsPage() {
                 </div>
                 
                 <div className="mt-10 pt-10 border-t border-gray-100">
-                  <button className="w-full btn-primary py-4 mb-4 flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => setSightingModal(true)}
+                    disabled={!user}
+                    title={user ? "Report a Sighting" : "Login to report a sighting"}
+                    className="w-full btn-primary py-4 mb-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <AlertTriangle size={20} /> Report a Sighting
                   </button>
                   <p className="text-xs text-center text-gray-400">
-                    Your sighting report will be sent directly to the family and local authorities.
+                    {user
+                      ? "Your sighting report will be sent directly to the family."
+                      : "Please log in to report a sighting."}
                   </p>
                 </div>
               </div>
@@ -234,6 +245,14 @@ export default function MissingDetailsPage() {
           </div>
         </div>
       </main>
+
+      {/* Sighting / Contact Modal */}
+      <ContactModal
+        reportId={id}
+        isOpen={sightingModal}
+        onClose={() => setSightingModal(false)}
+        isLoggedIn={!!user}
+      />
       
       <Footer />
     </div>
