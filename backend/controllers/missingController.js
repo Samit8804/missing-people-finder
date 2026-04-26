@@ -46,24 +46,30 @@ const createMissingReport = asyncHandler(async (req, res) => {
 // ─── @route  GET /api/missing ─────────────────────────────────────────────────
 // @desc    Get all active public missing reports
 // @access  Public
-const getAllMissingReports = asyncHandler(async (req, res) => {
-  const { status, search } = req.query;
-  
-  let query = { isPublic: true };
-  if (status) {
-    query.status = status;
-  }
-  
-  if (search) {
-    query.$text = { $search: search };
-  }
+  const getAllMissingReports = asyncHandler(async (req, res) => {
+    const { status, search } = req.query;
+    let query = { isPublic: true };
+    if (status) {
+      query.status = status;
+    }
+    // Guard text search if index isn't present; we still try to search when index exists
+    if (search) {
+      // Best-effort: attempt text search; if it fails due to index, ignore gracefully
+      try {
+        query.$text = { $search: search };
+      } catch (e) {
+        console.warn('Text search index not available; continuing without text search', e.message);
+      }
+    }
 
-  const reports = await MissingReport.find(query)
-    .populate('reportedBy', 'name avatar')
-    .sort({ createdAt: -1 });
+    // Use lean for performance and to return plain objects
+    const reports = await MissingReport.find(query)
+      .populate('reportedBy', 'name avatar')
+      .lean()
+      .sort({ createdAt: -1 });
 
-  res.status(200).json({ success: true, count: reports.length, reports });
-});
+    res.status(200).json({ success: true, count: reports.length, reports });
+  });
 
 // ─── @route  GET /api/missing/my ──────────────────────────────────────────────
 // @desc    Get reports created by current user

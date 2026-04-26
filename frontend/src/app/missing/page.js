@@ -37,9 +37,15 @@ export default function MissingBoardPage() {
     setLoading(true);
     try {
       const res = await api.get(`/missing?search=${search}&status=${status}`);
-      setReports(res.data.reports || []);
+      if (res.data && res.data.reports) {
+        setReports(res.data.reports);
+      } else {
+        setReports([]);
+      }
     } catch (err) {
       console.error("Failed to fetch reports", err);
+      // Show user-friendly error
+      setError('Could not load reports. Please try again later.');
     } finally {
       setLoading(false);
     }
