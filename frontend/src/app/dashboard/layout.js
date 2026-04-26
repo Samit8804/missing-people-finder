@@ -17,6 +17,17 @@ export default function DashboardLayout({ children }) {
     }
   }, [user, loading, router]);
 
+  // Route guard: prevent leaving the dashboard space unless the user logs out
+  // Allow navigation to dashboard-related routes and public board/report areas
+  useEffect(() => {
+    if (loading || !user) return;
+    const path = pathname || '';
+    const allowed = path.startsWith('/dashboard') || path.startsWith('/missing') || path.startsWith('/report');
+    if (!allowed) {
+      router.push('/dashboard');
+    }
+  }, [pathname, user, loading, router]);
+
   if (loading || !user) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-purple-600">Loading your space...</div>;
   }
@@ -26,6 +37,7 @@ export default function DashboardLayout({ children }) {
     { name: "My Active Cases", href: "/dashboard/cases", icon: FileSearch },
     { name: "Match Suggestions", href: "/dashboard/matches", icon: Users },
     { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
+    { name: "Public Board", href: "/missing", icon: FileSearch },
   ];
 
   return (
@@ -33,7 +45,7 @@ export default function DashboardLayout({ children }) {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-gray-100">
-          <Link href="/" className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <Link href="/dashboard" className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <div className="bg-purple-600 p-1.5 rounded text-white"><ShieldCheck size={18} /></div>
             FindLink
           </Link>
