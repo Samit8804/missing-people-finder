@@ -27,9 +27,9 @@ export default function Navbar() {
           : "bg-transparent py-5"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
+        <Link href="/" className="flex items-center gap-2 group min-w-0">
           <div className="bg-gradient-to-tr from-purple-600 to-indigo-600 p-2 rounded-xl text-white shadow-md group-hover:shadow-lg transition-all duration-300 transform group-hover:-translate-y-0.5">
             <Search size={22} className="stroke-[2.5]" />
           </div>
@@ -38,8 +38,11 @@ export default function Navbar() {
           </span>
         </Link>
 
+        {/* Spacer to prevent overlap between logo and right-side menu on wide screens */}
+        <div className="flex-1" aria-hidden="true"></div>
+
         {/* Desktop Menu */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-8 whitespace-nowrap">
           <Link href="/#how-it-works" className="text-gray-600 hover:text-purple-600 font-medium transition-colors">
             How it Works
           </Link>
