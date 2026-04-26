@@ -1,10 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/authContext";
-import dynamic from 'next/dynamic';
-import { useState } from 'react';
-// Import SideDrawer lazily to avoid SSR issues
-const SideDrawer = dynamic(() => import('@/components/SideDrawer'), { ssr: false });
+// SideDrawer integration removed to restore standard dashboard layout
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
@@ -46,10 +43,6 @@ export default function DashboardLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Mobile/Drawer navigation (restored) */}
-      {typeof SideDrawer !== 'undefined' ? (
-        <SideDrawer open={true} onClose={()=>{}} navItems={navItems} user={user} onLogout={logout} />
-      ) : null}
       {/* Left Sidebar Navigation (restored for desktop) */}
       <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-gray-100">
