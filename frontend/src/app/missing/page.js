@@ -202,8 +202,8 @@ export default function MissingBoardPage() {
                 </Link>
                 {user && (() => {
                   const isOwner = report.reportedBy && report.reportedBy._id
-                    ? report.reportedBy._id.toString() === user._id.toString()
-                    : (report.userId ? report.userId.toString() === user._id.toString() : false);
+                    ? report.reportedBy._id?.toString() === user._id?.toString()
+                    : (report.userId ? report.userId?.toString() === user._id?.toString() : false);
                   return !isOwner ? (
                     <button
                       onClick={() => setContactModal({ open: true, reportId: report?._id ?? null })}
