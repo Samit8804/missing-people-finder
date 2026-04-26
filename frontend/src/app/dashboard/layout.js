@@ -23,8 +23,8 @@ export default function DashboardLayout({ children }) {
   useEffect(() => {
     if (loading || !user) return;
     const path = pathname || '';
-    const allowed = path.startsWith('/dashboard') || path.startsWith('/missing') || path.startsWith('/report');
-    if (!allowed) {
+    // Only redirect away if path starts with /dashboard (keep /missing and /report accessible)
+    if (!path.startsWith('/dashboard')) {
       router.push('/dashboard');
     }
   }, [pathname, user, loading, router]);
