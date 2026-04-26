@@ -161,7 +161,15 @@ const contactMissingReporter = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'Cannot contact your own report' });
   }
 
-  // Check if this specific user already contacted this report
+  // Determine ownership securely: report owner could be in `reportedBy._id` or `userId`
+  const ownerId = (missingReport.reportedBy && missingReport.reportedBy._id) ? missingReport.reportedBy._id : missingReport.userId;
+  const isOwner = ownerId && ownerId.toString() === req.user._id.toString();
+
+  // Prevent self-contact or already matched
+  if (isOwner) {
+    return res.status(400).json({ success: false, message: 'Cannot contact your own report' });
+  }
+
   const existingMatch = await Match.findOne({
     missingReport: missingReport._id,
     reviewedBy: req.user._id,

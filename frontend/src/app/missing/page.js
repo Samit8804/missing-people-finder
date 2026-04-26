@@ -181,23 +181,29 @@ export default function MissingBoardPage() {
                     <p className="text-xs text-gray-400 mb-4 line-clamp-2 italic italic text-left">
                       &quot;{report.description}&quot;
                     </p>
-                    <div className="flex gap-2 mt-2">
-                      <Link 
-                        href={`/report/missing/${report._id}`}
-                        className="flex-1 text-xs font-medium text-purple-600 hover:text-purple-700 border border-purple-200 bg-purple-50 py-2 px-3 rounded-lg hover:bg-purple-100 transition-all text-center"
-                      >
-                        View Details
-                      </Link>
-                      <button
-                        onClick={() => setContactModal({ open: true, reportId: report._id })}
-                        disabled={!user}
-                        className="flex-1 text-xs font-bold text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed py-2 px-3 rounded-lg shadow-sm hover:shadow-md transition-all text-center"
-                        title={user ? "Contact Reporter" : "Login to contact"}
-                      >
-                        <Eye size={14} className="inline ml-1" />
-                        I Found Them
-                      </button>
-                    </div>
+              <div className="flex gap-2 mt-2">
+                <Link 
+                  href={`/report/missing/${report._id}`}
+                  className="flex-1 text-xs font-medium text-purple-600 hover:text-purple-700 border border-purple-200 bg-purple-50 py-2 px-3 rounded-lg hover:bg-purple-100 transition-all text-center"
+                >
+                  View Details
+                </Link>
+                {user && (() => {
+                  const isOwner = report.reportedBy && report.reportedBy._id
+                    ? report.reportedBy._id.toString() === user._id.toString()
+                    : (report.userId ? report.userId.toString() === user._id.toString() : false);
+                  return !isOwner ? (
+                    <button
+                      onClick={() => setContactModal({ open: true, reportId: report._id })}
+                      className="flex-1 text-xs font-bold text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed py-2 px-3 rounded-lg shadow-sm hover:shadow-md transition-all text-center"
+                      title={"Contact Reporter"}
+                    >
+                      <Eye size={14} className="inline ml-1" />
+                      I Found Them
+                    </button>
+                  ) : null;
+                })()}
+              </div>
                   </div>
                 </div>
               </motion.div>
