@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
-const sendOTP = require('../utils/sendOTP');
+const { sendOTP, isSMSConfigured } = require('../utils/sendOTP');
 const asyncHandler = require('../utils/asyncHandler');
 
 // ─── @route  POST /api/auth/signup ────────────────────────────────────────────
