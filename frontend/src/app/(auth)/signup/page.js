@@ -208,7 +208,7 @@ export default function SignupPage() {
               className="input-field pl-10"
               placeholder="+1 (555) 000-0000 (optional)"
             />
-            {formData.phone && formData.phone.startsWith('+') && (
+            {formData.phone && formData.phone.replace(/\D/g, '').length >= 10 && (
               <div className="mt-2 flex items-center gap-4">
                 <label className="flex items-center gap-2 text-sm">
                   <input
