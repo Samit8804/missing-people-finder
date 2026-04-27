@@ -12,6 +12,7 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [step, setStep] = useState(1); // 1 = form, 2 = OTP
   const [otp, setOtp] = useState("");
+  const [otpMethod, setOtpMethod] = useState("email"); // 'email' or 'sms'
   const googleClientId = (typeof window !== 'undefined') ? (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '') : '';
   const googleEnabled = !!googleClientId;
 
@@ -25,7 +26,14 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      await signup(formData);
+      const res = await signup(formData);
+      // Determine OTP method from response
+      const msg = res?.data?.message || "";
+      if (msg.toLowerCase().includes("sms") || msg.toLowerCase().includes("phone")) {
+        setOtpMethod("sms");
+      } else {
+        setOtpMethod("email");
+      }
       setStep(2); // Move to OTP step on success
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong.");
@@ -50,11 +58,14 @@ export default function SignupPage() {
   };
 
   if (step === 2) {
+    const otpTarget = otpMethod === "sms" ? formData.phone : formData.email;
     return (
       <div className="card w-full shadow-xl">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h1>
-          <p className="text-gray-500 text-sm">We&apos;ve sent a 6-digit verification code to <span className="font-semibold">{formData.email}</span>.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            {otpMethod === "sms" ? "Check your phone" : "Check your email"}
+          </h1>
+          <p className="text-gray-500 text-sm">We&apos;ve sent a 6-digit verification code to <span className="font-semibold">{otpTarget}</span>.</p>
         </div>
 
         {error && (
