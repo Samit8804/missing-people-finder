@@ -32,25 +32,43 @@ const signup = asyncHandler(async (req, res) => {
   const otp = user.generateOTP();
   await user.save({ validateBeforeSave: false });
 
-  // Send OTP via SMS or email (tries SMS first if phone provided with +)
-  const recipient = phone && phone.startsWith('+') ? phone : user.email;
+  // OTP delivery: User's phone (if provided) first, otherwise email
+  // The frontend sends "preference": "sms" or "email" in the request body
+  const preference = req.body.otpPreference;
+  const canUseSMS = phone && phone.startsWith('+') && isSMSConfigured();
+  
+  // If user requested SMS but we can't use it, fall back to email
+  let useSMS = preference === 'sms' && canUseSMS;
   let otpMethod = null;
-  try {
-    otpMethod = await sendOTP({ to: recipient, otp, name: user.name });
-    console.log(`📬 OTP sent via ${otpMethod.method} to ${recipient}`);
-  } catch (otpErr) {
-    console.warn('⚠️ Failed to send OTP (non-blocking):', otpErr.message);
+
+  if (useSMS && canUseSMS) {
+    try {
+      otpMethod = await sendOTP({ to: phone, otp, name: user.name });
+    } catch (smsErr) {
+      console.warn('⚠️ SMS failed, falling back to email:', smsErr.message);
+      useSMS = false;
+    }
+  }
+
+  // Fall back to email if SMS not used or not available
+  if (!useSMS) {
+    try {
+      otpMethod = await sendOTP({ to: user.email, otp, name: user.name });
+    } catch (emailErr) {
+      console.warn('⚠️ Email failed:', emailErr.message);
+    }
   }
 
   res.status(201).json({
     success: true,
-    message: otpMethod 
-      ? `Account created! OTP sent via ${otpMethod.method}. Verify to activate.`
-      : 'Account created! Please contact support if you don\'t receive OTP.',
+    message: user.phone && otpMethod?.method === 'sms'
+      ? 'Account created! OTP sent to your phone. Verify to activate.'
+      : 'Account created! OTP sent to your email. Verify to activate.',
     user: {
       id: user._id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       role: user.role,
     },
   });

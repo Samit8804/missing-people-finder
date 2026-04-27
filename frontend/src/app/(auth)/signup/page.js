@@ -13,6 +13,7 @@ export default function SignupPage() {
   const [step, setStep] = useState(1); // 1 = form, 2 = OTP
   const [otp, setOtp] = useState("");
   const [otpMethod, setOtpMethod] = useState("email"); // 'email' or 'sms'
+  const [verifyBy, setVerifyBy] = useState("email"); // user's choice: 'email' or 'sms'
   const googleClientId = (typeof window !== 'undefined') ? (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '') : '';
   const googleEnabled = !!googleClientId;
 
@@ -26,15 +27,11 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const res = await signup(formData);
-      // Determine OTP method from response
-      const msg = res?.data?.message || "";
-      if (msg.toLowerCase().includes("sms") || msg.toLowerCase().includes("phone")) {
-        setOtpMethod("sms");
-      } else {
-        setOtpMethod("email");
-      }
-      setStep(2); // Move to OTP step on success
+      // Include verification preference in request
+      const payload = { ...formData, otpPreference: verifyBy };
+      const res = await signup(payload);
+      setOtpMethod(verifyBy);
+      setStep(2);
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong.");
     } finally {
@@ -209,8 +206,34 @@ export default function SignupPage() {
               value={formData.phone}
               onChange={handleChange}
               className="input-field pl-10"
-              placeholder="+1 (555) 000-0000"
+              placeholder="+1 (555) 000-0000 (optional)"
             />
+            {formData.phone && formData.phone.startsWith('+') && (
+              <div className="mt-2 flex items-center gap-4">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="verifyBy"
+                    value="email"
+                    checked={verifyBy === 'email'}
+                    onChange={(e) => setVerifyBy(e.target.value)}
+                    className="text-purple-600"
+                  />
+                  Verify via email
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="verifyBy"
+                    value="sms"
+                    checked={verifyBy === 'sms'}
+                    onChange={(e) => setVerifyBy(e.target.value)}
+                    className="text-purple-600"
+                  />
+                  Verify via SMS
+                </label>
+              </div>
+            )}
           </div>
         </div>
 
