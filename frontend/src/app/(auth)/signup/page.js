@@ -27,11 +27,13 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      // Include verification preference in request
       const payload = { ...formData, otpPreference: verifyBy };
-      const res = await signup(payload);
-      setOtpMethod(verifyBy);
-      setStep(2);
+      await signup(payload);
+      // Set step to 2 only after successful signup - use setTimeout to avoid hydration mismatch
+      setTimeout(() => {
+        setStep(2);
+        setOtpMethod(verifyBy);
+      }, 0);
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong.");
     } finally {
