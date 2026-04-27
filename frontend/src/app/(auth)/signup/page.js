@@ -55,12 +55,12 @@ export default function SignupPage() {
   };
 
   if (step === 2) {
-    const otpTarget = otpMethod === "sms" ? formData.phone : formData.email;
+    const otpTarget = formData.email;
     return (
       <div className="card w-full shadow-xl">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {otpMethod === "sms" ? "Check your phone" : "Check your email"}
+            Verify Your Account
           </h1>
           <p className="text-gray-500 text-sm">We&apos;ve sent a 6-digit verification code to <span className="font-semibold">{otpTarget}</span>.</p>
         </div>
