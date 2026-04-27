@@ -32,28 +32,33 @@ const signup = asyncHandler(async (req, res) => {
   const otp = user.generateOTP();
   await user.save({ validateBeforeSave: false });
 
-  await sendEmail({
-    to: user.email,
-    subject: 'Verify your FindLink account',
-    html: `
-      <div style="font-family: Inter, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px;">
-        <div style="background: linear-gradient(135deg, #7C3AED, #4F46E5); padding: 20px; border-radius: 12px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">FindLink</h1>
-        </div>
-        <div style="padding: 24px; border: 1px solid #E5E7EB; border-radius: 12px; margin-top: 16px;">
-          <h2 style="color: #1F2937;">Verify Your Email</h2>
-          <p style="color: #4B5563;">Hi <strong>${user.name}</strong>, welcome to FindLink!</p>
-          <p style="color: #4B5563;">Your verification code is:</p>
-          <div style="background: #F3F4F6; padding: 16px; border-radius: 8px; text-align: center; margin: 16px 0;">
-            <h1 style="color: #7C3AED; letter-spacing: 8px; font-size: 36px; margin: 0;">${otp}</h1>
+  // Send OTP email - don't fail signup if email fails
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: 'Verify your FindLink account',
+      html: `
+        <div style="font-family: Inter, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px;">
+          <div style="background: linear-gradient(135deg, #7C3AED, #4F46E5); padding: 20px; border-radius: 12px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">FindLink</h1>
           </div>
-          <p style="color: #6B7280; font-size: 13px;">This code expires in 10 minutes. Do not share it with anyone.</p>
+          <div style="padding: 24px; border: 1px solid #E5E7EB; border-radius: 12px; margin-top: 16px;">
+            <h2 style="color: #1F2937;">Verify Your Email</h2>
+            <p style="color: #4B5563;">Hi <strong>${user.name}</strong>, welcome to FindLink!</p>
+            <p style="color: #4B5563;">Your verification code is:</p>
+            <div style="background: #F3F4F6; padding: 16px; border-radius: 8px; text-align: center; margin: 16px 0;">
+              <h1 style="color: #7C3AED; letter-spacing: 8px; font-size: 36px; margin: 0;">${otp}</h1>
+            </div>
+            <p style="color: #6B7280; font-size: 13px;">This code expires in 10 minutes. Do not share it with anyone.</p>
+          </div>
         </div>
-      </div>
-    `,
-  });
+      `,
+    });
+  } catch (emailErr) {
+    console.warn('⚠️ Failed to send signup OTP email (non-blocking):', emailErr.message);
+  }
 
-  // Do not log in the user yet. OTP verification is required before login.
+  // Allow OTP verification even if email failed - admin can manually verify user
   res.status(201).json({
     success: true,
     message: 'Account created! Please verify the OTP sent to your email to activate the account.',
