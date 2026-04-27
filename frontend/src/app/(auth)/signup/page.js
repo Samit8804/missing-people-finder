@@ -13,7 +13,7 @@ export default function SignupPage() {
   const [step, setStep] = useState(1); // 1 = form, 2 = OTP
   const [otp, setOtp] = useState("");
   const [otpMethod, setOtpMethod] = useState("email"); // 'email' or 'sms'
-  const [verifyBy, setVerifyBy] = useState("email"); // user's choice: 'email' or 'sms'
+  const [verifyBy, setVerifyBy] = useState("sms"); // default to SMS when phone is required
   const googleClientId = (typeof window !== 'undefined') ? (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '') : '';
   const googleEnabled = !!googleClientId;
 
@@ -195,7 +195,7 @@ export default function SignupPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone (Optional)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone Number</label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Phone size={18} className="text-gray-400" />
@@ -206,10 +206,10 @@ export default function SignupPage() {
               value={formData.phone}
               onChange={handleChange}
               className="input-field pl-10"
-              placeholder="+1 (555) 000-0000 (optional)"
+              placeholder="+1 (555) 000-0000"
+              required
             />
-            {formData.phone && formData.phone.replace(/\D/g, '').length >= 10 && (
-              <div className="mt-2 flex items-center gap-4">
+            <div className="mt-2 flex items-center gap-4">
                 <label className="flex items-center gap-2 text-sm">
                   <input
                     type="radio"
@@ -233,7 +233,6 @@ export default function SignupPage() {
                   Verify via SMS
                 </label>
               </div>
-            )}
           </div>
         </div>
 

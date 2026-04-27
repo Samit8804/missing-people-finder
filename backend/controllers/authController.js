@@ -9,8 +9,13 @@ const asyncHandler = require('../utils/asyncHandler');
 const signup = asyncHandler(async (req, res) => {
   const { name, email, phone, password } = req.body;
 
-  if (!name || !email || !password) {
-    return res.status(400).json({ success: false, message: 'Name, email, and password are required' });
+  if (!name || !email || !phone || !password) {
+    return res.status(400).json({ success: false, message: 'Name, email, phone, and password are required' });
+  }
+  // Validate phone has at least 10 digits
+  const phoneDigits = phone.replace(/\D/g, '');
+  if (phoneDigits.length < 10) {
+    return res.status(400).json({ success: false, message: 'Please enter a valid phone number with at least 10 digits' });
   }
   if (password.length < 6) {
     return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
