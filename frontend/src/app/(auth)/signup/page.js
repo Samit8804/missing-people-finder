@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Loader2, Mail, Lock, User, Phone } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 
 export default function SignupPage() {
   const { signup, verifyOTP, googleLogin } = useAuth();
+  const router = useRouter();
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -21,6 +23,8 @@ export default function SignupPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const router = useRouter();
+
   const handleSignup = async (e) => {
     e.preventDefault();
     setError("");
@@ -29,11 +33,8 @@ export default function SignupPage() {
     try {
       const payload = { ...formData, otpPreference: verifyBy };
       await signup(payload);
-      // Set step to 2 only after successful signup - use setTimeout to avoid hydration mismatch
-      setTimeout(() => {
-        setStep(2);
-        setOtpMethod(verifyBy);
-      }, 0);
+      // Redirect to dedicated verify page to avoid hydration issues
+      router.push(`/verify?email=${encodeURIComponent(formData.email)}`);
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong.");
     } finally {
@@ -56,7 +57,10 @@ export default function SignupPage() {
     }
   };
 
-  if (step === 2) {
+  // Step tracking no longer needed - using separate verify page
+  // if (step === 2) { ... }
+
+  // Google Sign-In integration for signup
     const otpTarget = formData.email;
     return (
       <div className="card w-full shadow-xl">
