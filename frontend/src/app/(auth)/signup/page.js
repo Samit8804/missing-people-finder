@@ -7,15 +7,12 @@ import { ArrowRight, Loader2, Mail, Lock, User, Phone } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 
 export default function SignupPage() {
-  const { signup, verifyOTP, googleLogin } = useAuth();
+  const { signup, googleLogin } = useAuth();
   const router = useRouter();
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [step, setStep] = useState(1); // 1 = form, 2 = OTP
-  const [otp, setOtp] = useState("");
-  const [otpMethod, setOtpMethod] = useState("email"); // 'email' or 'sms'
-  const [verifyBy, setVerifyBy] = useState("sms"); // default to SMS when phone is required
+  const [verifyBy, setVerifyBy] = useState("sms"); 
   const googleClientId = (typeof window !== 'undefined') ? (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '') : '';
   const googleEnabled = !!googleClientId;
 
@@ -40,68 +37,9 @@ export default function SignupPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleVerify = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      await verifyOTP(otp, formData.email);
-      // Auth context will redirect to dashboard
-    } catch (err) {
-      setError(err.response?.data?.message || "Invalid OTP.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Step tracking no longer needed - using separate verify page
-  // if (step === 2) { ... }
+};
 
   // Google Sign-In integration for signup
-    const otpTarget = formData.email;
-    return (
-      <div className="card w-full shadow-xl">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Verify Your Account
-          </h1>
-          <p className="text-gray-500 text-sm">We&apos;ve sent a 6-digit verification code to <span className="font-semibold">{otpTarget}</span>.</p>
-        </div>
-
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-r-md">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleVerify} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5 text-center">Verification Code</label>
-            <input
-              type="text"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              className="input-field text-center text-2xl tracking-widest font-mono"
-              placeholder="000000"
-              maxLength={6}
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading || otp.length < 6}
-            className="btn-primary w-full flex items-center justify-center gap-2 py-3 mt-4 disabled:opacity-70"
-          >
-            {loading ? <Loader2 className="animate-spin" size={20} /> : "Verify Account"}
-          </button>
-        </form>
-      </div>
-    );
-  }
 
   // Google Sign-In integration for signup
   useEffect(() => {
