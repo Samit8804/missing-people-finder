@@ -20,8 +20,6 @@ export default function SignupPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const router = useRouter();
-
   const handleSignup = async (e) => {
     e.preventDefault();
     setError("");
