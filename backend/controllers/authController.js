@@ -57,11 +57,7 @@ const signup = asyncHandler(async (req, res) => {
 
   // Fall back to email if SMS not used or not available
   if (!useSMS) {
-    try {
-      otpMethod = await sendOTP({ to: user.email, otp, name: user.name });
-    } catch (emailErr) {
-      console.warn('⚠️ Email failed:', emailErr.message);
-    }
+    otpMethod = await sendOTP({ to: user.email, otp, name: user.name });
   }
 
   res.status(201).json({

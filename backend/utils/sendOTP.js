@@ -1,18 +1,31 @@
 const nodemailer = require('nodemailer');
 const { sendSMS, isSMSConfigured } = require('../utils/sendSMS');
 
-// Create reusable transporter for email
-let emailTransporter = null;
-if (process.env.EMAIL_HOST) {
-  emailTransporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT, 10),
+// Build transporter on demand so .env changes are picked up without restart
+function getEmailTransporter() {
+  const host = process.env.EMAIL_HOST;
+  const port = process.env.EMAIL_PORT;
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
+  if (!host || !port || !user || !pass) {
+    return null;
+  }
+  return nodemailer.createTransport({
+    host,
+    port: parseInt(port, 10),
     secure: false,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
+    auth: { user, pass },
+    // useful for debugging auth issues
+    tls: { rejectUnauthorized: false },
   });
+}
+
+// verify credentials immediately at startup (logs any misconfig)
+const startupTransport = getEmailTransporter();
+if (startupTransport) {
+  startupTransport.verify()
+    .then(() => console.log('✅ Email transporter verified'))
+    .catch((err) => console.warn('⚠️ Email transporter verify failed:', err.message));
 }
 
 /**
@@ -21,7 +34,7 @@ if (process.env.EMAIL_HOST) {
  */
 const sendOTP = async ({ to, otp, name }) => {
   // Check if it's a phone number (starts with +)
-  if (to.startsWith('+') && isSMSConfigured()) {
+  if (to && to.startsWith('+') && isSMSConfigured()) {
     try {
       await sendSMS(to, otp);
       return { method: 'sms' };
@@ -31,6 +44,7 @@ const sendOTP = async ({ to, otp, name }) => {
   }
 
   // Fall back to email
+  const emailTransporter = getEmailTransporter();
   if (!emailTransporter) {
     throw new Error('Neither SMS nor email service configured');
   }
@@ -54,7 +68,7 @@ const sendOTP = async ({ to, otp, name }) => {
 
   try {
     const info = await emailTransporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to,
       subject: 'Verify your FindLink account',
       html,

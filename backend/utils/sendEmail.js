@@ -1,24 +1,35 @@
 const nodemailer = require('nodemailer');
 
-// Create a reusable transporter
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: parseInt(process.env.EMAIL_PORT, 10),
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+// Build transporter on demand so .env changes are picked up without restart
+function getTransporter() {
+  const host = process.env.EMAIL_HOST;
+  const port = process.env.EMAIL_PORT;
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
+  if (!host || !port || !user || !pass) {
+    return null;
+  }
+  return nodemailer.createTransport({
+    host,
+    port: parseInt(port, 10),
+    secure: false, // true for 465, false for other ports
+    auth: { user, pass },
+    tls: { rejectUnauthorized: false },
+  });
+}
 
 /**
  * Send an email
  * @param {object} options - { to, subject, html }
  */
 const sendEmail = async ({ to, subject, html }) => {
+  const transporter = getTransporter();
+  if (!transporter) {
+    throw new Error('Email service not configured (missing env vars)');
+  }
   try {
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to,
       subject,
       html,
